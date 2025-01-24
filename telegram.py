@@ -8,7 +8,7 @@ API_ID = os.getenv("AMAR_TELEGRAM_API_ID")
 API_HASH = os.getenv("AMAR_TELEGRAM_API_HASH")
 PHONE_NUMBER = os.getenv("AMAR_PHONE_NUMBER")
 
-CHAT_ID = -4538347316
+CHAT_ID = int(os.getenv("CLUB_CHAT_ID"))
 
 
 class TelegramScraper:
@@ -86,7 +86,7 @@ if __name__ == "__main__":
             CHAT_ID, limit=50
         )  # Fetch the last 50 messages
         for msg in messages:
-            print(msg)
+            print(msg.text)
 
         await scraper.disconnect()
 

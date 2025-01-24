@@ -1,31 +1,39 @@
-import json
 
+import dotenv
+import os
+import telebot
 import chatgpt
+import tiktoken
+dotenv.load_dotenv()
 
-prompt = """
-I have a dataset collected from Telegram (including messages, date, sender name ) and I’d like to leverage this information to better understand my audience, identify the most engaging content topics, and determine the best posting patterns. The ultimate goal is to develop a comprehensive media strategy and content plan that can be effectively applied across all other social media platforms.
-
-What I need from you:
-
-1. Analyze the provided dataset to identify audience interests, demographics (if possible), and the types of content that yield the highest engagement.
-
-
-2. Determine the optimal posting times and content formats that best capture audience attention and encourage interaction.
+BABOSHI_BOT_TOKEN = os.getenv("BABOSHI_BOT_TOKEN")
+CHATGPT_API_KEY = os.getenv("CHATGPT_API")
+bot = telebot.TeleBot(BABOSHI_BOT_TOKEN)
 
 
-3. Derive insights from Telegram user behavior and propose a content strategy that can be scaled and adapted across various platforms .
+def main():
+    client = chatgpt.GPT4TurboClient(CHATGPT_API_KEY, "gpt-4o")
+    content_types = ['audio', 'photo', 'voice', 'video',
+                     'document', 'text', 'location', 'contact', 'sticker']
+
+    @bot.message_handler(commands=["Hello", "Start"])
+    def Greeting(message: telebot.types.Message):
+        bot.reply_to(message, "Hello welcome to our chatgpt bot")
+
+    @bot.message_handler(func=lambda msg: True, content_types=content_types)
+    def chatgpt_response(message: telebot.types.Message):
+        try:
+            response = client.chat(prompt=message.text)
+            print(response)
+            bot.reply_to(message, response)
+        except Exception as e:
+            bot.reply_to(message, f"sorry {e} occured")
+            print(e)
+            pass
+
+    bot.infinity_polling()
 
 
-4. Suggest a holistic media plan that includes content types, posting schedules, and engagement tactics tailored to each platform and aligned with the target audience’s preferences.
-
-"""
-
-# response = chatgpt.prompting(prompt)
-
-with open("sample.json", "r") as file:
-    data = json.dumps(json.load(file), ensure_ascii=False)
-response = chatgpt.prompting(prompt)
-print("Chatgpt: ", response)
-print("---------------------------")
-response = chatgpt.prompting(data)
-print("Chatgpt: ", response)
+if __name__ == "__main__":
+    print("Runinng.... ")
+    main()
