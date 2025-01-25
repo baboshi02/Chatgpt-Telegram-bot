@@ -43,6 +43,30 @@ class GPT4TurboClient:
                   for i in range(0, len(tokens), chunk_size)]
         return [encoding.decode(chunk) for chunk in chunks]
 
+    def add_to_context(self, message, limit=5):
+        self.context.append(message)
+        if len(self.context) > limit:
+            self.context.pop(0)
+
+    def send_image(self,  base64_image, prompt="What is in this image", max_tokens=1000):
+        message = {"role": "user", "content": [
+            {
+                "type": "text",
+                "text": prompt,
+            }, {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}
+
+            }
+        ]}
+        self.add_to_context(message, 10)
+        response = openai.chat.completions.create(
+            model=self.model,
+            messages=self.context,
+            max_tokens=max_tokens,
+        )
+        return response.choices[0].message.content
+
     def chat(self, prompt, max_tokens=1000):
         """
         Send a prompt to the GPT-4 Turbo model and get a response.
@@ -50,10 +74,8 @@ class GPT4TurboClient:
         :param max_tokens: The maximum number of tokens in the output.
         :return: The generated response.
         """
-        if len(self.context) >= 5:
-            self.context.pop(0)
         message = {"role": "user", "content": prompt}
-        self.context.append(message)
+        self.add_to_context(message)
         response = openai.chat.completions.create(
             model=self.model,
             messages=self.context,

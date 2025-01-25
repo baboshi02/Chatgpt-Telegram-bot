@@ -3,9 +3,9 @@ import dotenv
 import os
 import telebot
 import chatgpt
-import tiktoken
 import base64
 dotenv.load_dotenv()
+
 
 BABOSHI_BOT_TOKEN = os.getenv("BABOSHI_BOT_TOKEN")
 CHATGPT_API_KEY = os.getenv("CHATGPT_API")
@@ -22,18 +22,28 @@ def main():
         bot.reply_to(message, "Hello welcome to our chatgpt bot")
 
     @bot.message_handler(content_types=['photo'])
-    def handle_images(message):
-        image_info = bot.get_file(message.photo[-1].file_id)
-        downloaded_image = bot.download_file(image_info.file_path)
+    def handle_images(message: telebot.types.Message):
         # encode image
-        encoded_image = base64.b64encode(downloaded_image).decode("utf-8")
+        try:
+            print("caption: ", message.caption)
+            image_info = bot.get_file(message.photo[-1].file_id)
+            downloaded_image = bot.download_file(image_info.file_path)
+            encoded_image = base64.b64encode(downloaded_image).decode("utf-8")
+            if (message.caption):
+                response = client.send_image(encoded_image, message.caption)
+            else:
+                response = client.send_image(encoded_image)
+            bot.reply_to(message, response)
+
+        except Exception as e:
+            bot.reply_to(message, "sorry error  occured")
+            print(e)
 
     @bot.message_handler(func=lambda msg: True, content_types=content_types)
     def chatgpt_response(message: telebot.types.Message):
-        print(message)
+        print("sent: ", message.text)
         try:
             response = client.chat(prompt=message.text)
-            print(response)
             bot.reply_to(message, response)
         except Exception as e:
             bot.reply_to(message, f"sorry {e} occured")
