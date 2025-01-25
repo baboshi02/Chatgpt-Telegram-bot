@@ -4,6 +4,7 @@ import os
 import telebot
 import chatgpt
 import tiktoken
+import base64
 dotenv.load_dotenv()
 
 BABOSHI_BOT_TOKEN = os.getenv("BABOSHI_BOT_TOKEN")
@@ -20,8 +21,16 @@ def main():
     def Greeting(message: telebot.types.Message):
         bot.reply_to(message, "Hello welcome to our chatgpt bot")
 
+    @bot.message_handler(content_types=['photo'])
+    def handle_images(message):
+        image_info = bot.get_file(message.photo[-1].file_id)
+        downloaded_image = bot.download_file(image_info.file_path)
+        # encode image
+        encoded_image = base64.b64encode(downloaded_image).decode("utf-8")
+
     @bot.message_handler(func=lambda msg: True, content_types=content_types)
     def chatgpt_response(message: telebot.types.Message):
+        print(message)
         try:
             response = client.chat(prompt=message.text)
             print(response)

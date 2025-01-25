@@ -18,6 +18,7 @@ class GPT4TurboClient:
         """
         self.api_key = api_key
         self.model = model
+        self.context = []
         openai.api_key = api_key
 
     def count_tokens(self, text):
@@ -49,9 +50,13 @@ class GPT4TurboClient:
         :param max_tokens: The maximum number of tokens in the output.
         :return: The generated response.
         """
+        if len(self.context) >= 5:
+            self.context.pop(0)
+        message = {"role": "user", "content": prompt}
+        self.context.append(message)
         response = openai.chat.completions.create(
             model=self.model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=self.context,
             max_tokens=max_tokens,
         )
         return response.choices[0].message.content
@@ -94,17 +99,17 @@ class GPT4TurboClient:
 
 # Example Usage
 if __name__ == "__main__":
-    API_KEY = "your_openai_api_key"
-    client = GPT4TurboClient(API_KEY)
-
+    CHATGPT_API_KEY = os.getenv("CHATGPT_API")
+    client = GPT4TurboClient(CHATGPT_API_KEY)
     # Example long input text
-    long_text = "Your very long input text goes here..." * 1000  # Simulate long input
-
-    try:
-        responses = client.process_large_text(
-            long_text, chunk_size=10000, max_tokens=1000
-        )
-        print("Combined Responses:")
-        print("\n".join(responses))
-    except Exception as e:
-        print("Error:", e)
+    print("enter q to exit")
+    while True:
+        prompt = input("Input prompt: ")
+        if prompt.lower() == "q":
+            print("bye")
+            break
+        try:
+            response = client.chat(prompt)
+            print("Chatgpt: ", response)
+        except Exception as e:
+            print("Error:", e)
