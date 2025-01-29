@@ -18,7 +18,6 @@ class GPT4TurboClient:
         """
         self.api_key = api_key
         self.model = model
-        self.context = []
         openai.api_key = api_key
 
     def count_tokens(self, text):
@@ -43,12 +42,7 @@ class GPT4TurboClient:
                   for i in range(0, len(tokens), chunk_size)]
         return [encoding.decode(chunk) for chunk in chunks]
 
-    def add_to_context(self, message, limit=5):
-        self.context.append(message)
-        if len(self.context) > limit:
-            self.context.pop(0)
-
-    def send_image(self,  base64_image, prompt="What is in this image", max_tokens=1000):
+    def send_b64_image_with_prompt(self,  base64_image, prompt, context_history=[]):
         message = {"role": "user", "content": [
             {
                 "type": "text",
@@ -59,29 +53,30 @@ class GPT4TurboClient:
 
             }
         ]}
-        self.add_to_context(message, 10)
+        context_history.append(message)
+        return self.send_to_chatgpt(context_history)
+
+    def send_to_chatgpt(self, context_history, max_tokens=1000):
         response = openai.chat.completions.create(
             model=self.model,
-            messages=self.context,
+            messages=context_history,
             max_tokens=max_tokens,
         )
         return response.choices[0].message.content
 
-    def chat(self, prompt, max_tokens=1000):
-        """
-        Send a prompt to the GPT-4 Turbo model and get a response.
-        :param prompt: The input prompt.
-        :param max_tokens: The maximum number of tokens in the output.
-        :return: The generated response.
-        """
+    def send_b64_image(self, base64_image, context_history=[]):
+        message = {"role": "user", "content": [{
+            "type": "image_url",
+            "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}
+        }]
+        }
+        context_history.append(message)
+        return self.send_to_chatgpt(context_history)
+
+    def send_text(self, prompt, context_history=[]):
         message = {"role": "user", "content": prompt}
-        self.add_to_context(message)
-        response = openai.chat.completions.create(
-            model=self.model,
-            messages=self.context,
-            max_tokens=max_tokens,
-        )
-        return response.choices[0].message.content
+        context_history.append(message)
+        return self.send_to_chatgpt(context_history)
 
     async def process_large_text(
         self, text, outfile, chunk_size=10000, max_tokens=1000, rate_limit=3
@@ -112,9 +107,6 @@ class GPT4TurboClient:
 
             print(f"Processing chunk {i + 1}/{len(chunks)}...")
             response = self.chat(chunk, max_tokens=max_tokens)
-            outfile.write("-" * 30)
-            outfile.write("\n")
-            outfile.write(response)
             responses.append(response)
         return responses
 
@@ -125,13 +117,17 @@ if __name__ == "__main__":
     client = GPT4TurboClient(CHATGPT_API_KEY)
     # Example long input text
     print("enter q to exit")
+    context_history = []
     while True:
         prompt = input("Input prompt: ")
         if prompt.lower() == "q":
             print("bye")
             break
         try:
-            response = client.chat(prompt)
+            response = client.send_text(prompt, context_history)
             print("Chatgpt: ", response)
+            message = {"role": "user", "content": prompt}
+            context_history.append(message)
+            context_history.append({"role": "assistant", "content": response})
         except Exception as e:
             print("Error:", e)

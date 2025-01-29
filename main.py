@@ -1,9 +1,10 @@
-
 import dotenv
 import os
 import telebot
 import chatgpt
 import base64
+from firebase import db
+
 dotenv.load_dotenv()
 
 
@@ -14,8 +15,9 @@ bot = telebot.TeleBot(BABOSHI_BOT_TOKEN)
 
 def main():
     client = chatgpt.GPT4TurboClient(CHATGPT_API_KEY, "gpt-4o")
-    content_types = ['audio', 'photo', 'voice', 'video',
-                     'document', 'text', 'location', 'contact', 'sticker']
+    senders_ref = db.collection("users")
+    # content_types = ['audio', 'photo', 'voice', 'video',
+    #                  'document', 'text', 'location', 'contact', 'sticker']
 
     @bot.message_handler(commands=["Hello", "Start"])
     def Greeting(message: telebot.types.Message):
@@ -25,32 +27,70 @@ def main():
     def handle_images(message: telebot.types.Message):
         # encode image
         try:
-            print("caption: ", message.caption)
+            sender_id = str(message.from_user.id)
+            doc_ref = senders_ref.document(sender_id)
+            doc = doc_ref.get()
+            # Get context history from db if it exists else initiate empty list
+            context_history = doc.to_dict(
+            )["context_history"] if doc.exists else []
             image_info = bot.get_file(message.photo[-1].file_id)
             downloaded_image = bot.download_file(image_info.file_path)
             encoded_image = base64.b64encode(downloaded_image).decode("utf-8")
+            # Send Image with caption without context_history
             if (message.caption):
-                response = client.send_image(encoded_image, message.caption)
+                chatgpt_response = client.send_b64_image_with_prompt(
+                    encoded_image, message.caption)
+                content = message.caption
             else:
-                response = client.send_image(encoded_image)
-            bot.reply_to(message, response)
+                chatgpt_response = client.send_b64_image(encoded_image)
+                content = " what is this image"
+
+            bot.reply_to(message, chatgpt_response)
+            add_to_context_history(
+                content, chatgpt_response, doc_ref, context_history)
 
         except Exception as e:
+            raise e
             bot.reply_to(message, "sorry error  occured")
             print(e)
 
-    @bot.message_handler(func=lambda msg: True, content_types=content_types)
-    def chatgpt_response(message: telebot.types.Message):
-        print("sent: ", message.text)
+    @bot.message_handler(func=lambda msg: True, content_types=['text'])
+    def handle_text(message: telebot.types.Message):
+        # TODO: extract the logic of converting to object to the chatgpt class
+        message_length = len(message.text)
+        max_length = 200
+        if message_length > max_length:
+            bot.reply_to(message, f"Message length must be less than 100 characters long \n Current length {
+                message_length} ")
+            return
         try:
-            response = client.chat(prompt=message.text)
-            bot.reply_to(message, response)
+            prompt = message.text
+            sender_id = str(message.from_user.id)
+            doc_ref = senders_ref.document(sender_id)
+            doc = doc_ref.get()
+            # Get context history from firebase if it exists else initiate empty list
+            context_history = doc.to_dict(
+            )["context_history"] if doc.exists else []
+            chatgpt_response = client.send_text(prompt, context_history)
+            bot.reply_to(message, chatgpt_response)
+            add_to_context_history(
+                prompt, chatgpt_response, doc_ref, context_history)
         except Exception as e:
             bot.reply_to(message, f"sorry {e} occured")
             print(e)
-            pass
-
+            raise e
     bot.infinity_polling()
+
+
+def add_to_context_history(user_content, chatgpt_respones,  doc_ref, context_history, max_length=20):
+    recent_user_context = {"role": "user", "content": user_content}
+    recent_assisatnt_context = {
+        "role": "assistant", "content": chatgpt_respones}
+    context_history.append(recent_user_context)
+    context_history.append(recent_assisatnt_context)
+    if len(context_history) > max_length:
+        context_history = context_history[max_length:]
+    doc_ref.set({"context_history": context_history})
 
 
 if __name__ == "__main__":
