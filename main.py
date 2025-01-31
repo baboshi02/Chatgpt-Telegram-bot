@@ -8,16 +8,22 @@ from firebase import db
 dotenv.load_dotenv()
 
 
-BABOSHI_BOT_TOKEN = os.getenv("BABOSHI_BOT_TOKEN")
-CHATGPT_API_KEY = os.getenv("CHATGPT_API")
-bot = telebot.TeleBot(BABOSHI_BOT_TOKEN)
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHATGPT_TOKEN = os.getenv("CHATGPT_TOKEN")
+bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
+
+
+def validate_user(userId, collection_ref):
+    pass
 
 
 def main():
-    client = chatgpt.GPT4TurboClient(CHATGPT_API_KEY, "gpt-4o")
+    client = chatgpt.GPT4TurboClient(CHATGPT_TOKEN, "gpt-4o")
     senders_ref = db.collection("users")
     # content_types = ['audio', 'photo', 'voice', 'video',
     #                  'document', 'text', 'location', 'contact', 'sticker']
+
+    # TODO: add user addition via telegram
 
     @bot.message_handler(commands=["Hello", "Start"])
     def Greeting(message: telebot.types.Message):

@@ -3,10 +3,11 @@ import os
 import dotenv
 from telethon import TelegramClient
 
+
 dotenv.load_dotenv()
-API_ID = os.getenv("AMAR_TELEGRAM_API_ID")
-API_HASH = os.getenv("AMAR_TELEGRAM_API_HASH")
-PHONE_NUMBER = os.getenv("AMAR_PHONE_NUMBER")
+API_ID = os.getenv("TELEGRAM_SCRAPER_ID")
+API_HASH = os.getenv("TELEGRAM_SCRAPER_HASH")
+PHONE_NUMBER = os.getenv("TELEGRAM_SCRAPER_PHONENUMBER")
 
 CHAT_ID = int(os.getenv("CLUB_CHAT_ID"))
 

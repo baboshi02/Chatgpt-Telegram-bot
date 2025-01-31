@@ -8,7 +8,7 @@ import tiktoken
 
 load_dotenv()
 
-OPENAI_API_KEY = os.getenv("AMAR_BOT_CHATGPT")
+OPENAI_API_KEY = os.getenv("CHATGPT_TOKEN")
 
 
 class GPT4TurboClient:
@@ -113,7 +113,7 @@ class GPT4TurboClient:
 
 # Example Usage
 if __name__ == "__main__":
-    CHATGPT_API_KEY = os.getenv("CHATGPT_API")
+    CHATGPT_API_KEY = os.getenv("CHATGPT_TOKEN")
     client = GPT4TurboClient(CHATGPT_API_KEY)
     # Example long input text
     print("enter q to exit")
