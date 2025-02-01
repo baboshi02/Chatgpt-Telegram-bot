@@ -55,7 +55,7 @@ def main():
 
             bot.reply_to(message, chatgpt_response)
             add_to_context_history(
-                content, chatgpt_response, doc_ref, context_history)
+                content, chatgpt_response, doc_ref, context_history, chatgpt_customization)
 
         except Exception as e:
             bot.reply_to(message, "sorry error  occured")
@@ -81,7 +81,7 @@ def main():
             chatgpt_response = client.send_text(prompt, context_history)
             bot.reply_to(message, chatgpt_response)
             add_to_context_history(
-                prompt, chatgpt_response, doc_ref, context_history)
+                prompt, chatgpt_response, doc_ref, context_history, chatgpt_customization)
         except Exception as e:
             bot.reply_to(message, f"sorry error occured")
             print(e)
