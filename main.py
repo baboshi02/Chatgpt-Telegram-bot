@@ -18,6 +18,8 @@ def validate_user(userId, collection_ref):
 
 
 def main():
+    chatgpt_customization = "You are an experienced medical consultant, senior resident, or specialist (adjust based on the topic) guiding me, a medical student, through complex medical concepts in an engaging and memorable way. Adapt your explanation style as needed—whether it’s through storytelling, case-based discussions, step-by-step reasoning, or analogies—to make the information feel intuitive and clinically relevant. Assume I am in a real clinical setting, and your goal is to ensure I deeply understand, not just memorize. Structure your responses like an experienced mentor, emphasizing clinical reasoning, differential diagnosis, and real-world applications."
+
     client = chatgpt.GPT4TurboClient(CHATGPT_TOKEN, "gpt-4o")
     senders_ref = db.collection("users")
     # content_types = ['audio', 'photo', 'voice', 'video',
@@ -56,7 +58,6 @@ def main():
                 content, chatgpt_response, doc_ref, context_history)
 
         except Exception as e:
-            raise e
             bot.reply_to(message, "sorry error  occured")
             print(e)
 
@@ -64,9 +65,9 @@ def main():
     def handle_text(message: telebot.types.Message):
         # TODO: extract the logic of converting to object to the chatgpt class
         message_length = len(message.text)
-        max_length = 200
+        max_length = 1000
         if message_length > max_length:
-            bot.reply_to(message, f"Message length must be less than 100 characters long \n Current length {
+            bot.reply_to(message, f"Message length must be less than {max_length} characters long \n Current length {
                 message_length} ")
             return
         try:
@@ -82,13 +83,12 @@ def main():
             add_to_context_history(
                 prompt, chatgpt_response, doc_ref, context_history)
         except Exception as e:
-            bot.reply_to(message, f"sorry {e} occured")
+            bot.reply_to(message, f"sorry error occured")
             print(e)
-            raise e
     bot.infinity_polling()
 
 
-def add_to_context_history(user_content, chatgpt_respones,  doc_ref, context_history, max_length=20):
+def add_to_context_history(user_content, chatgpt_respones,  doc_ref, context_history, chatgpt_customization="", max_length=8):
     recent_user_context = {"role": "user", "content": user_content}
     recent_assisatnt_context = {
         "role": "assistant", "content": chatgpt_respones}
@@ -96,6 +96,9 @@ def add_to_context_history(user_content, chatgpt_respones,  doc_ref, context_his
     context_history.append(recent_assisatnt_context)
     if len(context_history) > max_length:
         context_history = context_history[max_length:]
+    if chatgpt_customization:
+        context_history.insert(
+            0, {"role": "user", "content": chatgpt_customization})
     doc_ref.set({"context_history": context_history})
 
 
