@@ -22,6 +22,8 @@ def main():
 
     client = chatgpt.GPT4TurboClient(CHATGPT_TOKEN, "gpt-4o")
     senders_ref = db.collection("users")
+    allowed_users = db.collection("admin").document(
+        "authorized_users").get().to_dict()["allowed_users"]
     # content_types = ['audio', 'photo', 'voice', 'video',
     #                  'document', 'text', 'location', 'contact', 'sticker']
 
@@ -34,6 +36,11 @@ def main():
     @bot.message_handler(content_types=['photo'])
     def handle_images(message: telebot.types.Message):
         # encode image
+        sender_id = message.from_user.id
+        if (sender_id not in allowed_users):
+            bot.reply_to(
+                message, "Sorry you must be part of amara bot to use this bot")
+            return
         try:
             sender_id = str(message.from_user.id)
             doc_ref = senders_ref.document(sender_id)
@@ -64,6 +71,11 @@ def main():
     @bot.message_handler(func=lambda msg: True, content_types=['text'])
     def handle_text(message: telebot.types.Message):
         # TODO: extract the logic of converting to object to the chatgpt class
+        sender_id = message.from_user.id
+        if (sender_id not in allowed_users):
+            bot.reply_to(
+                message, "Sorry you must be part of all in the pocket uofk group to use this bot")
+            return
         message_length = len(message.text)
         max_length = 1000
         if message_length > max_length:
