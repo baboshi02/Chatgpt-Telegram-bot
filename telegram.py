@@ -9,7 +9,7 @@ API_ID = os.getenv("TELEGRAM_SCRAPER_ID")
 API_HASH = os.getenv("TELEGRAM_SCRAPER_HASH")
 PHONE_NUMBER = os.getenv("TELEGRAM_SCRAPER_PHONENUMBER")
 
-CHAT_ID = int(os.getenv("CLUB_CHAT_ID"))
+CHAT_ID = int(os.getenv("SCRAPED_GROUP_ID"))
 
 
 class TelegramScraper:

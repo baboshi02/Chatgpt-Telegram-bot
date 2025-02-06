@@ -4,6 +4,8 @@ import telebot
 import chatgpt
 import base64
 from firebase import db
+import asyncio
+from telegram import TelegramScraper
 
 dotenv.load_dotenv()
 
@@ -12,18 +14,24 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHATGPT_TOKEN = os.getenv("CHATGPT_TOKEN")
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
-
-def validate_user(userId, collection_ref):
-    pass
+allowed_users = db.collection("admin").document(
+    "authorized_users").get().to_dict()["allowed_users"]
 
 
 def main():
-    chatgpt_customization = "You are an experienced medical consultant, senior resident, or specialist (adjust based on the topic) guiding me, a medical student, through complex medical concepts in an engaging and memorable way. Adapt your explanation style as needed—whether it’s through storytelling, case-based discussions, step-by-step reasoning, or analogies—to make the information feel intuitive and clinically relevant. Assume I am in a real clinical setting, and your goal is to ensure I deeply understand, not just memorize. Structure your responses like an experienced mentor, emphasizing clinical reasoning, differential diagnosis, and real-world applications."
+    chatgpt_customization = "You are an experienced medical consultant,\
+            senior resident, or specialist (adjust based on the topic) \
+            guiding me, a medical student, through complex medical concepts\
+            in an engaging and memorable way. Adapt your explanation style as\
+            needed—whether it’s through storytelling, case-based discussions, \
+            step-by-step reasoning, or analogies—to make the information feel \
+            intuitive and clinically relevant. Assume I am in a real clinical \
+            setting, and your goal is to ensure I deeply understand, not just \
+            memorize. Structure your responses like an experienced mentor, emphasizing\
+            clinical reasoning, differential diagnosis, and real-world applications."
 
     client = chatgpt.GPT4TurboClient(CHATGPT_TOKEN, "gpt-4o")
     senders_ref = db.collection("users")
-    allowed_users = db.collection("admin").document(
-        "authorized_users").get().to_dict()["allowed_users"]
     # content_types = ['audio', 'photo', 'voice', 'video',
     #                  'document', 'text', 'location', 'contact', 'sticker']
 
@@ -114,6 +122,25 @@ def add_to_context_history(user_content, chatgpt_respones,  doc_ref, context_his
     doc_ref.set({"context_history": context_history})
 
 
+async def updating_allowed_users():
+    API_ID = os.getenv("TELEGRAM_SCRAPER_ID")
+    API_HASH = os.getenv("TELEGRAM_SCRAPER_HASH")
+    PHONE_NUMBER = os.getenv("TELEGRAM_SCRAPER_PHONENUMBER")
+    CHAT_ID = int(os.getenv("SCRAPED_GROUP_ID"))
+    scraper = TelegramScraper(API_ID, API_HASH, PHONE_NUMBER)
+    while True:
+        await scraper.connect()
+        allowed_users = await scraper.get_participants(CHAT_ID)
+        allowed_users = [user.id for user in allowed_users]
+        print("Updated")
+        await asyncio.sleep(3600)
+
+
 if __name__ == "__main__":
-    print("Runinng.... ")
-    main()
+    async def concurrently():
+        asyncio.get_running_loop()
+        synced_task = asyncio.to_thread(main)
+        async_task = updating_allowed_users()
+        await asyncio.gather(async_task, synced_task)
+    print("Running...")
+    asyncio.run(concurrently())
