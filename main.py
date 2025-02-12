@@ -30,7 +30,7 @@ def main():
             memorize. Structure your responses like an experienced mentor, emphasizing\
             clinical reasoning, differential diagnosis, and real-world applications."
 
-    client = chatgpt.GPT4TurboClient(CHATGPT_TOKEN, "gpt-4o")
+    client = chatgpt.GPT4TurboClient(CHATGPT_TOKEN, "chatgpt-4o-latest")
     senders_ref = db.collection("users")
     # content_types = ['audio', 'photo', 'voice', 'video',
     #                  'document', 'text', 'location', 'contact', 'sticker']
