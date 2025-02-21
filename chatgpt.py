@@ -56,7 +56,7 @@ class GPT4TurboClient:
         context_history.append(message)
         return self.send_to_chatgpt(context_history)
 
-    def send_to_chatgpt(self, context_history, max_tokens=1000):
+    def send_to_chatgpt(self, context_history, max_tokens):
         response = openai.chat.completions.create(
             model=self.model,
             messages=context_history,
@@ -73,10 +73,10 @@ class GPT4TurboClient:
         context_history.append(message)
         return self.send_to_chatgpt(context_history)
 
-    def send_text(self, prompt, context_history=[]):
+    def send_text(self, prompt, context_history=[], max_tokens=1000):
         message = {"role": "user", "content": prompt}
         context_history.append(message)
-        return self.send_to_chatgpt(context_history)
+        return self.send_to_chatgpt(context_history, max_tokens)
 
     async def process_large_text(
         self, text, outfile, chunk_size=10000, max_tokens=1000, rate_limit=3

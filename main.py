@@ -45,7 +45,7 @@ def main():
     def handle_images(message: telebot.types.Message):
         # encode image
         sender_id = message.from_user.id
-        if (sender_id not in allowed_users):
+        if sender_id not in allowed_users:
             bot.reply_to(
                 message, "Sorry you must be part of amara bot to use this bot")
             return
@@ -123,6 +123,7 @@ def add_to_context_history(user_content, chatgpt_respones,  doc_ref, context_his
 
 
 async def updating_allowed_users():
+    global allowed_users
     API_ID = os.getenv("TELEGRAM_SCRAPER_ID")
     API_HASH = os.getenv("TELEGRAM_SCRAPER_HASH")
     PHONE_NUMBER = os.getenv("TELEGRAM_SCRAPER_PHONENUMBER")
@@ -130,8 +131,8 @@ async def updating_allowed_users():
     scraper = TelegramScraper(API_ID, API_HASH, PHONE_NUMBER)
     while True:
         await scraper.connect()
-        allowed_users = await scraper.get_participants(CHAT_ID)
-        allowed_users = [user.id for user in allowed_users]
+        allowed_unfiltered_users = await scraper.get_participants(CHAT_ID)
+        allowed_users = [user.id for user in allowed_unfiltered_users]
         print("Updated")
         await asyncio.sleep(3600)
 
@@ -140,7 +141,6 @@ if __name__ == "__main__":
     async def concurrently():
         asyncio.get_running_loop()
         synced_task = asyncio.to_thread(main)
-        async_task = updating_allowed_users()
-        await asyncio.gather(async_task, synced_task)
+        await asyncio.gather(updating_allowed_users(), synced_task)
     print("Running...")
     asyncio.run(concurrently())
