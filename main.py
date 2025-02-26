@@ -14,8 +14,8 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHATGPT_TOKEN = os.getenv("CHATGPT_TOKEN")
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
-allowed_users = db.collection("admin").document(
-    "authorized_users").get().to_dict()["allowed_users"]
+# allowed_users = db.collection("admin").document(
+#     "authorized_users").get().to_dict()["allowed_users"]
 
 
 def main():
@@ -44,11 +44,11 @@ def main():
     @bot.message_handler(content_types=['photo'])
     def handle_images(message: telebot.types.Message):
         # encode image
-        sender_id = message.from_user.id
-        if sender_id not in allowed_users:
-            bot.reply_to(
-                message, "Sorry you must be part of amara bot to use this bot")
-            return
+        # sender_id = message.from_user.id
+        # if sender_id not in allowed_users:
+        #     bot.reply_to(
+        #         message, "Sorry you must be part of amara bot to use this bot")
+        #     return
         try:
             sender_id = str(message.from_user.id)
             doc_ref = senders_ref.document(sender_id)
@@ -80,10 +80,10 @@ def main():
     def handle_text(message: telebot.types.Message):
         # TODO: extract the logic of converting to object to the chatgpt class
         sender_id = message.from_user.id
-        if (sender_id not in allowed_users):
-            bot.reply_to(
-                message, "Sorry you must be part of all in the pocket uofk group to use this bot")
-            return
+        # if (sender_id not in allowed_users):
+        #     bot.reply_to(
+        #         message, "Sorry you must be part of all in the pocket uofk group to use this bot")
+        #     return
         message_length = len(message.text)
         max_length = 1000
         if message_length > max_length:
@@ -138,9 +138,10 @@ async def updating_allowed_users():
 
 
 if __name__ == "__main__":
-    async def concurrently():
-        asyncio.get_running_loop()
-        synced_task = asyncio.to_thread(main)
-        await asyncio.gather(updating_allowed_users(), synced_task)
+    # async def concurrently():
+    #     asyncio.get_running_loop()
+    #     synced_task = asyncio.to_thread(main)
+    #     await asyncio.gather(updating_allowed_users(), synced_task)
     print("Running...")
-    asyncio.run(concurrently())
+    main()
+    # asyncio.run(concurrently())
