@@ -14,8 +14,7 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHATGPT_TOKEN = os.getenv("CHATGPT_TOKEN")
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
-# allowed_users = db.collection("admin").document(
-#     "authorized_users").get().to_dict()["allowed_users"]
+allowed_users = []
 
 
 def main():
@@ -30,19 +29,24 @@ def main():
             memorize. Structure your responses like an experienced mentor, emphasizing\
             clinical reasoning, differential diagnosis, and real-world applications."
 
-    client = chatgpt.GPT4TurboClient(CHATGPT_TOKEN, "gpt-4o-mini-2024-07-18")
+    client = chatgpt.ChatGptClient(CHATGPT_TOKEN, "gpt-4o-mini-2024-07-18")
     senders_ref = db.collection("users")
     # content_types = ['audio', 'photo', 'voice', 'video',
     #                  'document', 'text', 'location', 'contact', 'sticker']
 
     # TODO: add user addition via telegram
 
-    @bot.message_handler(commands=["Hello", "Start"])
+    @bot.message_handler(commands=["hello", "start"])
     def Greeting(message: telebot.types.Message):
-        bot.reply_to(message, "Hello welcome to our chatgpt bot")
+        bot.reply_to(message, "Hello welcome to our Medical bor bot")
 
     @bot.message_handler(content_types=['photo'])
     def handle_images(message: telebot.types.Message):
+
+        sender_id = message.from_user.id
+        if not is_allowed_user(sender_id):
+            return bot.reply_to(message, "Sorry you must be part of amara bot to use this bot")
+
         # encode image
         # sender_id = message.from_user.id
         # if sender_id not in allowed_users:
@@ -50,8 +54,7 @@ def main():
         #         message, "Sorry you must be part of amara bot to use this bot")
         #     return
         try:
-            sender_id = str(message.from_user.id)
-            doc_ref = senders_ref.document(sender_id)
+            doc_ref = senders_ref.document(str(sender_id))
             doc = doc_ref.get()
             # Get context history from db if it exists else initiate empty list
             context_history = doc.to_dict(
@@ -74,16 +77,15 @@ def main():
 
         except Exception as e:
             bot.reply_to(message, "sorry error  occured")
+            raise e
             print(e)
 
     @bot.message_handler(func=lambda msg: True, content_types=['text'])
     def handle_text(message: telebot.types.Message):
         # TODO: extract the logic of converting to object to the chatgpt class
         sender_id = message.from_user.id
-        # if (sender_id not in allowed_users):
-        #     bot.reply_to(
-        #         message, "Sorry you must be part of all in the pocket uofk group to use this bot")
-        #     return
+        if not is_allowed_user(sender_id):
+            return bot.reply_to(message, "Sorry you must be part of amara bot to use this bot")
         message_length = len(message.text)
         max_length = 1000
         if message_length > max_length:
@@ -103,7 +105,7 @@ def main():
             add_to_context_history(
                 prompt, chatgpt_response, doc_ref, context_history, chatgpt_customization)
         except Exception as e:
-            bot.reply_to(message, f"sorry error occured")
+            bot.reply_to(message, f"Sorry error occured")
             print(e)
     bot.infinity_polling()
 
@@ -135,13 +137,21 @@ async def updating_allowed_users():
         allowed_users = [user.id for user in allowed_unfiltered_users]
         print("Updated")
         await asyncio.sleep(3600)
+        await scraper.disconnect()
+
+
+def is_allowed_user(userID: int):
+    global allowed_users
+    return userID in allowed_users
 
 
 if __name__ == "__main__":
-    # async def concurrently():
-    #     asyncio.get_running_loop()
-    #     synced_task = asyncio.to_thread(main)
-    #     await asyncio.gather(updating_allowed_users(), synced_task)
+    async def concurrently():
+        asyncio.get_running_loop()
+        synced_task = asyncio.to_thread(main)
+        await asyncio.gather(updating_allowed_users(), synced_task)
+
     print("Running...")
-    main()
+    asyncio.run(concurrently())
+
     # asyncio.run(concurrently())
