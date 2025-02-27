@@ -141,17 +141,19 @@ async def updating_allowed_users():
 
 
 def is_allowed_user(userID: int):
-    global allowed_users
-    return userID in allowed_users
+    return True
+    # global allowed_users
+    # return userID in allowed_users
 
 
 if __name__ == "__main__":
-    async def concurrently():
-        asyncio.get_running_loop()
-        synced_task = asyncio.to_thread(main)
-        await asyncio.gather(updating_allowed_users(), synced_task)
-
-    print("Running...")
-    asyncio.run(concurrently())
-
+    # async def concurrently():
+    #     asyncio.get_running_loop()
+    #     synced_task = asyncio.to_thread(main)
+    #     await asyncio.gather(updating_allowed_users(), synced_task)
+    #
+    # print("Running...")
+    # asyncio.run(concurrently())
+    main()
+    #
     # asyncio.run(concurrently())
