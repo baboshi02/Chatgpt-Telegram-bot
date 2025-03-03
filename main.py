@@ -101,7 +101,7 @@ def main():
             context_history = doc.to_dict(
             )["context_history"] if doc.exists else []
             chatgpt_response = client.send_text(prompt, context_history)
-            bot.reply_to(message, chatgpt_response)
+            chunk_response(message.from_user.id, chatgpt_response)
             add_to_context_history(
                 prompt, chatgpt_response, doc_ref, context_history, chatgpt_customization)
         except Exception as e:
@@ -144,6 +144,14 @@ def is_allowed_user(userID: int):
     return True
     # global allowed_users
     # return userID in allowed_users
+
+
+def chunk_response(chat_id, response):
+    if len(response) > 4095:
+        for x in range(0, len(response), 4095):
+            bot.send_message(chat_id, text=response[x:x+4095])
+    else:
+        bot.send_message(chat_id, text=response)
 
 
 if __name__ == "__main__":
