@@ -36,12 +36,16 @@ def main():
 
     # TODO: add user addition via telegram
 
+    maintainance_message = "Sorry AMARABOT  under maintainance. Thanks for your patience"
+
     @bot.message_handler(commands=["hello", "start"])
     def Greeting(message: telebot.types.Message):
+        return bot.reply_to(message, maintainance_message)
         bot.reply_to(message, "Hello welcome to our Medical bor bot")
 
     @bot.message_handler(content_types=['photo'])
     def handle_images(message: telebot.types.Message):
+        return bot.reply_to(message, maintainance_message)
 
         sender_id = message.from_user.id
         if not is_allowed_user(sender_id):
@@ -83,6 +87,7 @@ def main():
     @bot.message_handler(func=lambda msg: True, content_types=['text'])
     def handle_text(message: telebot.types.Message):
         # TODO: extract the logic of converting to object to the chatgpt class
+        return bot.reply_to(message, maintainance_message)
         sender_id = message.from_user.id
         if not is_allowed_user(sender_id):
             return bot.reply_to(message, "Sorry you must be part of amara bot to use this bot")
